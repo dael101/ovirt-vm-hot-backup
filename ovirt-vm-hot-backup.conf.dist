@@ -1,0 +1,14 @@
+[DEFAULT]
+server=https://ovirt-manager.example.com/api
+username=admin@internal
+password=XXXXXXXXXXXXXXXXXXX
+export_domain=XXXXXXXXXXXXXX
+exports_to_keep=1
+
+[vm-one]
+
+[vm-two]
+exports_to_keep=4
+
+[vm-tree]
+
