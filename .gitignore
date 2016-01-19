@@ -1,6 +1,9 @@
 # Config file - Use .conf.dist instead
 *.conf
 
+# PyCharm files
+.idea
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
