@@ -1,3 +1,6 @@
+# Config file - Use .conf.dist instead
+*.conf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
