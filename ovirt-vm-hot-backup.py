@@ -147,6 +147,7 @@ for vmname in Config.sections():
 
     except:
         print "Generic error occurred!!!"
+        raise
 
     eltime = time.time() - starttime
     print "Finished backup of VM '%s' at %s. %d seconds." % ( vmname, datetime.datetime.now().isoformat(" "), eltime )
