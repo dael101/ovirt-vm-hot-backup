@@ -28,120 +28,125 @@ for vmname in Config.sections():
 
     starttime = time.time()
 
-    api = ovirtsdk.api.API(
-            url=Config.get(vmname, 'server'),
-            username=Config.get(vmname, 'username'),
-            password=Config.get(vmname, 'password'),
-            insecure=True,
-            debug=False
-    )
-    export_domain = Config.get(vmname, 'export_domain')
+    try:
 
-    exporttokeep = int( Config.get(vmname, 'exports_to_keep') )
-    if not exporttokeep > 0:
-        exporttokeep = 1
+        api = ovirtsdk.api.API(
+                url=Config.get(vmname, 'server'),
+                username=Config.get(vmname, 'username'),
+                password=Config.get(vmname, 'password'),
+                insecure=True,
+                debug=False
+        )
+        export_domain = Config.get(vmname, 'export_domain')
 
-    timestr = '_' + time.strftime("%y") + chr( 64 + int(time.strftime("%m")) ) + time.strftime("%d") + chr( 65 + int(time.strftime("%H") ))
-    vmbkname = vmname + timestr
+        exporttokeep = int( Config.get(vmname, 'exports_to_keep') )
+        if not exporttokeep > 0:
+            exporttokeep = 1
 
-    snap_description = "snap4clone-" + str(time.time())
+        timestr = '_' + time.strftime("%y") + chr( 64 + int(time.strftime("%m")) ) + time.strftime("%d") + chr( 65 + int(time.strftime("%H") ))
+        vmbkname = vmname + timestr
 
-    vm = api.vms.get(vmname)
+        snap_description = "snap4clone-" + str(time.time())
 
-    print ""
-    print "VM name:         " + vm.get_name()
-    print "Exports to keep: " + str(exporttokeep)
-    print "Export domain:   " + api.storagedomains.get(export_domain).get_name()
-    print "Begin backup of VM '%s' at %s" % ( vmname, datetime.datetime.now().isoformat(" ") )
-    print "VM status: %s" % str( vm.get_status().state )
+        vm = api.vms.get(vmname)
 
-    print "Creating Snapshot " + snap_description
-    snapcreation = vm.snapshots.add( params.Snapshot(description=snap_description) )
+        print ""
+        print "VM name:         " + vm.get_name()
+        print "Exports to keep: " + str(exporttokeep)
+        print "Export domain:   " + api.storagedomains.get(export_domain).get_name()
+        print "Begin backup of VM '%s' at %s" % ( vmname, datetime.datetime.now().isoformat(" ") )
+        print "VM status: %s" % str( vm.get_status().state )
 
-    snaptoclone = ""
-    snap_status = ""
-    while True:
-        time.sleep(3)
-        snaptoclone = vm.snapshots.get(id=snapcreation.get_id())
-        snap_status = snaptoclone.get_snapshot_status()
-        if snap_status != "locked":
-            break
-        # print "Snapshot in progress (" + snap_status + ") ..."
+        print "Creating Snapshot " + snap_description
+        snapcreation = vm.snapshots.add( params.Snapshot(description=snap_description) )
 
-    if snap_status != "ok":
-        print "Snapshot creation failed. Status: " + snap_status
-        sys.exit(1)
+        snaptoclone = ""
+        snap_status = ""
+        while True:
+            time.sleep(3)
+            snaptoclone = vm.snapshots.get(id=snapcreation.get_id())
+            snap_status = snaptoclone.get_snapshot_status()
+            if snap_status != "locked":
+                break
+            # print "Snapshot in progress (" + snap_status + ") ..."
 
-    print "Snapshot done"
+        if snap_status != "ok":
+            print "Snapshot creation failed. Status: " + snap_status
+            sys.exit(1)
 
-    snapshots_param = params.Snapshots( snapshot=[params.Snapshot( id= snaptoclone.get_id())] )
+        print "Snapshot done"
 
-    print "Creating Clone (%s)" % ( vmbkname )
-    vmclone = api.vms.add(params.VM( name=vmbkname,
-                                     memory=vm.get_memory(),
-                                     cluster=vm.get_cluster(),
-                                     snapshots=snapshots_param,
-                                     delete_protected=False,
-                                     disks=params.Disks(clone=True),
-                                    ))
+        snapshots_param = params.Snapshots( snapshot=[params.Snapshot( id= snaptoclone.get_id())] )
 
-    clone_status = ""
-    while True:
-        time.sleep(3)
-        clone_status = str( api.vms.get(id=vmclone.get_id()).get_status().state )
-        if clone_status != "image_locked":
-            break
-        # print "Clone in progress (" + clone_status + ")..."
-    if clone_status != "down":
-        print "Clone failed. Status: " + clone_status
-        sys.exit(1)
-    print "Clone done"
+        print "Creating Clone (%s)" % ( vmbkname )
+        vmclone = api.vms.add(params.VM( name=vmbkname,
+                                         memory=vm.get_memory(),
+                                         cluster=vm.get_cluster(),
+                                         snapshots=snapshots_param,
+                                         delete_protected=False,
+                                         # disks=params.Disks(clone=True),
+                                        ))
 
-    print "Launch delete snapshot..."
-    snaptoclone.delete(async=False)
-    print "Delete snapshot done"
+        clone_status = ""
+        while True:
+            time.sleep(3)
+            clone_status = str( api.vms.get(id=vmclone.get_id()).get_status().state )
+            if clone_status != "image_locked":
+                break
+            # print "Clone in progress (" + clone_status + ")..."
+        if clone_status != "down":
+            print "Clone failed. Status: " + clone_status
+            sys.exit(1)
+        print "Clone done"
 
-
-    print "Launch export..."
-    vmclone.export(params.Action(exclusive=True,force=True,async=False,storage_domain=api.storagedomains.get( export_domain )))
-    clone_status = ""
-    while True:
-        time.sleep(3)
-        clone_status = str( api.vms.get(id=vmclone.get_id()).get_status().state )
-        if clone_status != "image_locked":
-            break
-        # print "Export in progress (" + clone_status + ")..."
-    if clone_status != "down":
-        print "Export failed. Status: " + clone_status
-        sys.exit(1)
-    print "Export done"
-
-    expstodel = []
-    print "Purge old export"
-    exported_vms = api.storagedomains.get(export_domain).vms.list()
-    for i in exported_vms:
-        expvmid = i.get_id()
-        #print 'scanning ' + str( i.get_name() )
-        if re.match('^'+vmname+'_\d\d[A-L]\d\d[A-Y]$', str( i.get_name() ) ):
-            #print 'adding to delete ' + str( i.get_name() )
-            expstodel.append( expvmid )
-
-    expstodel.sort()
-    del expstodel[-exporttokeep:]
-    for expidtodel in expstodel:
-        exptodel = api.storagedomains.get(export_domain).vms.get(id=expidtodel)
-        print "Deleting export " + str( exptodel.get_name() ) + "..."
-        exptodel.delete(async=False)
-        print "Delete export done"
-
-    print "Purge old export done"
+        print "Launch delete snapshot..."
+        snaptoclone.delete(async=False)
+        print "Delete snapshot done"
 
 
-    print "Launch delete clone..."
-    vmclone.delete(async=False)
-    print "Delete clone done"
+        print "Launch export..."
+        vmclone.export(params.Action(exclusive=True,force=True,async=False,storage_domain=api.storagedomains.get( export_domain )))
+        clone_status = ""
+        while True:
+            time.sleep(3)
+            clone_status = str( api.vms.get(id=vmclone.get_id()).get_status().state )
+            if clone_status != "image_locked":
+                break
+            # print "Export in progress (" + clone_status + ")..."
+        if clone_status != "down":
+            print "Export failed. Status: " + clone_status
+            sys.exit(1)
+        print "Export done"
 
-    api.disconnect()
+        expstodel = []
+        print "Purge old export"
+        exported_vms = api.storagedomains.get(export_domain).vms.list()
+        for i in exported_vms:
+            expvmid = i.get_id()
+            #print 'scanning ' + str( i.get_name() )
+            if re.match('^'+vmname+'_\d\d[A-L]\d\d[A-Y]$', str( i.get_name() ) ):
+                #print 'adding to delete ' + str( i.get_name() )
+                expstodel.append( expvmid )
+
+        expstodel.sort()
+        del expstodel[-exporttokeep:]
+        for expidtodel in expstodel:
+            exptodel = api.storagedomains.get(export_domain).vms.get(id=expidtodel)
+            print "Deleting export " + str( exptodel.get_name() ) + "..."
+            exptodel.delete(async=False)
+            print "Delete export done"
+
+        print "Purge old export done"
+
+
+        print "Launch delete clone..."
+        vmclone.delete(async=False)
+        print "Delete clone done"
+
+        api.disconnect()
+
+    except:
+        print "Generic error occurred!!!"
 
     eltime = time.time() - starttime
     print "Finished backup of VM '%s' at %s. %d seconds." % ( vmname, datetime.datetime.now().isoformat(" "), eltime )
