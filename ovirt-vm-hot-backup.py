@@ -145,9 +145,8 @@ for vmname in Config.sections():
 
         api.disconnect()
 
-    except:
-        print "Generic error occurred!!!"
-        raise
+    except Exception, e:
+        print e
 
     eltime = time.time() - starttime
     print "Finished backup of VM '%s' at %s. %d seconds." % ( vmname, datetime.datetime.now().isoformat(" "), eltime )
