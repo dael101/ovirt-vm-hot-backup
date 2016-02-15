@@ -75,7 +75,7 @@ for vmname in Config.sections():
             sys.exit(1)
 
         print "Snapshot done"
-        sleep(10)
+        time.sleep(10)
 
         snapshots_param = params.Snapshots( snapshot=[params.Snapshot( id= snaptoclone.get_id())] )
 
@@ -99,12 +99,12 @@ for vmname in Config.sections():
             print "Clone failed. Status: " + clone_status
             sys.exit(1)
         print "Clone done"
-        sleep(10)
+        time.sleep(10)
 
         print "Launch delete snapshot..."
         snaptoclone.delete(async=False)
         print "Delete snapshot done"
-        sleep(10)
+        time.sleep(10)
 
         print "Launch export..."
         vmclone.export(params.Action(exclusive=True,force=True,async=False,storage_domain=api.storagedomains.get( export_domain )))
@@ -119,7 +119,7 @@ for vmname in Config.sections():
             print "Export failed. Status: " + clone_status
             sys.exit(1)
         print "Export done"
-        sleep(10)
+        time.sleep(10)
 
         expstodel = []
         print "Purge old export"
@@ -140,13 +140,13 @@ for vmname in Config.sections():
             print "Delete export done"
 
         print "Purge old export done"
-        sleep(10)
+        time.sleep(10)
 
 
         print "Launch delete clone..."
         vmclone.delete(async=False)
         print "Delete clone done"
-        sleep(10)
+        time.sleep(10)
 
         api.disconnect()
 
