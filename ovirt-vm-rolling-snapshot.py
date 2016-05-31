@@ -25,19 +25,13 @@ if len( Config.sections() ) < 1:
     print "Config file is not valid. Exiting." 
     sys.exit(1)
 
+basetime = time
+
 for vmname in Config.sections():
 
     starttime = time.time()
 
     try:
-
-        api = ovirtsdk.api.API(
-                url=Config.get(vmname, 'server'),
-                username=Config.get(vmname, 'username'),
-                password=Config.get(vmname, 'password'),
-                insecure=True,
-                debug=False
-        )
 
         etime_to_keep   = int(Config.get(vmname, 'etime_to_keep'))
         hourly_to_keep  = int(Config.get(vmname, 'hourly_to_keep'))
@@ -58,38 +52,42 @@ for vmname in Config.sections():
 
         last_to_keep = { "____":etime_to_keep, "H___":hourly_to_keep, "HD__":daily_to_keep, "HDW_":weekly_to_keep, "HDWM":monthly_to_keep }
 
-        print "%s %s %s %s" % ( time_minutes, time_hours, time_weekday, time_monthweek )
-        print time.strftime("%M %H %w %d")
-
         hpos = dpos = wpos = mpos = "_"
 
-        if time.strftime("%M") == time_minutes: # minutes is 00
+        if basetime.strftime("%M") == time_minutes: # minutes is 00
             hpos = "H"
 
-            if time.strftime("%H") == time_hours: # hour is 00
+            if basetime.strftime("%H") == time_hours: # hour is 00
                 dpos = "D"
 
-                if time.strftime("%w") == time_weekday: # day of week is sunday
+                if basetime.strftime("%w") == time_weekday: # day of week is sunday
                     wpos = "W"
 
-                    if int( time.strftime("%d") ) <= ( 7 * time_monthweek ) and \
-                       int( time.strftime("%d") ) > ( 7 * ( time_monthweek - 1 ) ): # is the first week of month
+                    if int( basetime.strftime("%d") ) <= ( 7 * time_monthweek ) and \
+                       int( basetime.strftime("%d") ) > ( 7 * ( time_monthweek - 1 ) ): # is the first week of month
                         mpos = "M"
 
 
         snap_time_id = hpos + dpos + wpos + mpos
 
-        snap_description = "Rolling snapshot " + snap_time_id + " at " + datetime.datetime.now().isoformat(" ")
-
-        vm = api.vms.get(vmname)
-
-        print ""
-        print "VM name: " + vm.get_name()
-        print "Begin backup of VM '%s' at %s" % ( vmname, datetime.datetime.now().isoformat(" ") )
-        print "VM status: %s" % str( vm.get_status().state )
-
         if last_to_keep[snap_time_id]:
 
+            api = ovirtsdk.api.API(
+                    url=Config.get(vmname, 'server'),
+                    username=Config.get(vmname, 'username'),
+                    password=Config.get(vmname, 'password'),
+                    insecure=True,
+                    debug=False
+            )
+
+            vm = api.vms.get(vmname)
+
+            print ""
+            print "VM name: " + vm.get_name()
+            print "Begin backup of VM '%s' at %s" % ( vmname, datetime.datetime.now().isoformat(" ") )
+            print "VM status: %s" % str( vm.get_status().state )
+
+            snap_description = "Rolling snapshot " + snap_time_id + " at " + datetime.datetime.now().isoformat(" ")
             print "Creating Snapshot " + snap_description
 
             snapcreation = vm.snapshots.add( params.Snapshot(description=snap_description) )
@@ -113,39 +111,37 @@ for vmname in Config.sections():
 
             snapshots_param = params.Snapshots( snapshot=[params.Snapshot( id= snaptoclone.get_id())] )
 
-        print "Launch delete snapshot..."
-        snaptodel = []
-        for snapi in vm.get_snapshots().list():
-            snapi_id = snapi.get_id()
-            snapi_descr = vm.snapshots.get(id=snapi_id).description
-            snapi_time_match = re.match('^Rolling snapshot ' + snap_time_id + ' at', snapi_descr)
-            if snapi_time_match:
-                snaptodel.append( snapi )
-        snaptodel = sorted(snaptodel, key=attrgetter('creation_time') )
-        for snapitodel in snaptodel:
-            print "Snapshot: " + snapitodel.description
+            print "Launch delete snapshot..."
+            snaptodel = []
+            for snapi in vm.get_snapshots().list():
+                snapi_id = snapi.get_id()
+                snapi_descr = vm.snapshots.get(id=snapi_id).description
+                snapi_time_match = re.match('^Rolling snapshot ' + snap_time_id + ' at', snapi_descr)
+                if snapi_time_match:
+                    snaptodel.append( snapi )
+            snaptodel = sorted(snaptodel, key=attrgetter('creation_time') )
+            for snapitodel in snaptodel:
+                print "Snapshot: " + snapitodel.description
 
-        print
+            print
 
-        if last_to_keep[snap_time_id] > 0:
-            del snaptodel[-last_to_keep[snap_time_id]:]
+            if last_to_keep[snap_time_id] > 0:
+                del snaptodel[-last_to_keep[snap_time_id]:]
 
-        for snapitodel in snaptodel:
-            print "Deleting snapshot " + snapitodel.description
-            snapitodel.delete(async=False)
-            while vm.snapshots.get(id=snapitodel.get_id()):
-                time.sleep(5)
-                #print "Snapshot in progress (" + snap_status + ") ..."
-            print "Delete snapshot done"
+            for snapitodel in snaptodel:
+                print "Deleting snapshot " + snapitodel.description
+                snapitodel.delete(async=False)
+                while vm.snapshots.get(id=snapitodel.get_id()):
+                    time.sleep(5)
+                    #print "Snapshot in progress (" + snap_status + ") ..."
+                print "Delete snapshot done"
+
+            eltime = time.time() - starttime
+            print "Finished backup of VM '%s' at %s. %d seconds." % ( vmname, datetime.datetime.now().isoformat(" "), eltime )
 
 
     except Exception, e:
         print e
         print "Backup ERROR!!!"
 
-    eltime = time.time() - starttime
-    print "Finished backup of VM '%s' at %s. %d seconds." % ( vmname, datetime.datetime.now().isoformat(" "), eltime )
-
-print ""
-print "All done."
 
