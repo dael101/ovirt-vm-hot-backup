@@ -1,0 +1,42 @@
+[DEFAULT]
+
+server=https://ovc1mgr.lnf.infn.it/api
+username=admin@internal
+password=XXXXXXXXXXXXXX
+
+######################################################
+# Number of snapshots to keep. 0 is for no snapshot.
+
+hourly_to_keep=4
+daily_to_keep=7
+weekly_to_keep=4
+monthly_to_keep=12
+
+# Take snapshot everytime script is called and keep them
+etime_to_keep=0
+
+######################################################
+# When to create snapshot
+
+# minute of hour to create hourly and following snapshots
+time_minutes=53
+
+# hours of day to create daily and following snapshots
+time_hours=10
+
+# day of week to create weekly and following snapshots - 0 or 7 is sunday, 6 is saturday
+time_weekday=7
+
+# week of month to create monthly snapshots
+time_monthweek=1
+
+######################################################
+
+
+[vm-one]
+
+[vm-two]
+hourly_to_keep=12
+
+[vm-tree]
+

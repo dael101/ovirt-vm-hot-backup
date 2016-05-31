@@ -44,9 +44,9 @@ for vmname in Config.sections():
             exporttokeep = 1
 
         timestr = '_' + time.strftime("%y") + chr( 64 + int(time.strftime("%m")) ) + time.strftime("%d") + chr( 65 + int(time.strftime("%H") ))
-        vmbkname = vmname + timestr
+        vmbkname = vmname[:8] + timestr
 
-        snap_description = "snap4clone-" + str(time.time())
+        snap_description = "Cloning to " + vmbkname
 
         vm = api.vms.get(vmname)
 
@@ -127,7 +127,7 @@ for vmname in Config.sections():
         for i in exported_vms:
             expvmid = i.get_id()
             #print 'scanning ' + str( i.get_name() )
-            if re.match('^'+vmname+'_\d\d[A-L]\d\d[A-Y]$', str( i.get_name() ) ):
+            if re.match('^'+vmname[:8]+'_\d\d[A-L]\d\d[A-Y]$', str( i.get_name() ) ):
                 #print 'adding to delete ' + str( i.get_name() )
                 expstodel.append( expvmid )
 
