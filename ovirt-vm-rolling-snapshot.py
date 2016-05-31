@@ -1,11 +1,9 @@
 #!/usr/bin/python
 
 import sys
-import ovirtsdk.api
 import time
 import datetime
 import re
-from ovirtsdk.xml import params
 import ConfigParser
 import os
 from operator import attrgetter
@@ -71,6 +69,12 @@ for vmname in Config.sections():
         snap_time_id = hpos + dpos + wpos + mpos
 
         if last_to_keep[snap_time_id]:
+
+            try:
+                ovirtsdk
+            except:
+                import ovirtsdk.api
+                from ovirtsdk.xml import params
 
             api = ovirtsdk.api.API(
                     url=Config.get(vmname, 'server'),
