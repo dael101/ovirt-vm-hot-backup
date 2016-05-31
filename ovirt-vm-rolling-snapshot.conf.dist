@@ -1,6 +1,6 @@
 [DEFAULT]
 
-server=https://ovc1mgr.lnf.infn.it/api
+server=https://ovirt-manager.example.com/api
 username=admin@internal
 password=XXXXXXXXXXXXXX
 
