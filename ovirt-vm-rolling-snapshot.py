@@ -93,7 +93,7 @@ for vmname in Config.sections():
             print "VM status: %s" % str(vm.get_status().state)
 
             snap_description = "Rolling snapshot " + snap_time_id + " at " + datetime.datetime.now().isoformat(" ")
-            print "Creating Snapshot " + snap_description
+            print "Creating Snapshot '" + snap_description + "'"
 
             snapcreation = vm.snapshots.add(params.Snapshot(description=snap_description))
 
@@ -116,7 +116,7 @@ for vmname in Config.sections():
 
             snapshots_param = params.Snapshots(snapshot=[params.Snapshot(id=snaptoclone.get_id())])
 
-            print "Launch delete snapshot..."
+            #print "Launch delete snapshot..."
             snaptodel = []
             for snapi in vm.get_snapshots().list():
                 snapi_id = snapi.get_id()
@@ -126,7 +126,7 @@ for vmname in Config.sections():
                     snaptodel.append(snapi)
             snaptodel = sorted(snaptodel, key=attrgetter('creation_time'))
             for snapitodel in snaptodel:
-                print "Snapshot: " + snapitodel.description
+                #print "Snapshot: " + snapitodel.description
 
             print
 
@@ -134,12 +134,12 @@ for vmname in Config.sections():
                 del snaptodel[-last_to_keep[snap_time_id]:]
 
             for snapitodel in snaptodel:
-                print "Deleting snapshot " + snapitodel.description
+                print "Deleting old snapshot '" + snapitodel.description + "'"
                 snapitodel.delete(async=False)
                 while vm.snapshots.get(id=snapitodel.get_id()):
                     time.sleep(5)
                     # print "Snapshot in progress (" + snap_status + ") ..."
-                print "Delete snapshot done"
+                #print "Delete snapshot done"
 
             eltime = time.time() - starttime
             print "Finished backup of VM '%s' at %s. %d seconds." % (vmname,
