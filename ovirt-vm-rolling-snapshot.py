@@ -23,7 +23,7 @@ if len(Config.sections()) < 1:
     print "Config file is not valid. Exiting."
     sys.exit(1)
 
-basetime = time
+basetime = datetime.datetime.now()
 
 for vmname in Config.sections():
 
