@@ -125,7 +125,7 @@ for vmname in Config.sections():
                 if snapi_time_match:
                     snaptodel.append(snapi)
             snaptodel = sorted(snaptodel, key=attrgetter('creation_time'))
-            for snapitodel in snaptodel:
+            #for snapitodel in snaptodel:
                 #print "Snapshot: " + snapitodel.description
 
             print
