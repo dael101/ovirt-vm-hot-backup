@@ -68,6 +68,9 @@ for vmname in Config.sections():
 
         snap_time_id = hpos + dpos + wpos + mpos
 
+        if len(sys.argv) > 1:
+            snap_time_id = sys.argv[1]
+
         if last_to_keep[snap_time_id]:
 
             print ""
@@ -100,12 +103,13 @@ for vmname in Config.sections():
             snaptoclone = ""
             snap_status = ""
             while True:
-                time.sleep(5)
                 snaptoclone = vm.snapshots.get(id=snapcreation.get_id())
                 snap_status = snaptoclone.get_snapshot_status()
-                if snap_status != "locked":
-                    break
+                if snap_status == "locked":
+                    time.sleep(5)
                     # print "Snapshot in progress (" + snap_status + ") ..."
+                else:
+                    break
 
             if snap_status != "ok":
                 print "Snapshot creation failed. Status: " + snap_status
@@ -138,8 +142,8 @@ for vmname in Config.sections():
                 snapitodel.delete(async=False)
                 while vm.snapshots.get(id=snapitodel.get_id()):
                     time.sleep(5)
-                    # print "Snapshot in progress (" + snap_status + ") ..."
-                #print "Delete snapshot done"
+                    #print "Delete snapshot in progress (" + snap_status + ") ..."
+                print "Delete snapshot done"
 
             eltime = time.time() - starttime
             print "Finished backup of VM '%s' at %s. %d seconds." % (vmname,
