@@ -73,7 +73,8 @@ for vmname in Config.sections():
 
         if last_to_keep[snap_time_id]:
 
-            print ""
+            print
+            print "------------------------------------------------------------"
             print "VM name: " + vmname
 
             try:
@@ -102,13 +103,18 @@ for vmname in Config.sections():
 
             snaptoclone = ""
             snap_status = ""
+            sys.stdout.write( "Snapshot in progress..." )
+            sys.stdout.flush()
             while True:
                 snaptoclone = vm.snapshots.get(id=snapcreation.get_id())
                 snap_status = snaptoclone.get_snapshot_status()
                 if snap_status == "locked":
                     time.sleep(5)
-                    # print "Snapshot in progress (" + snap_status + ") ..."
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+
                 else:
+                    print
                     break
 
             if snap_status != "ok":
@@ -132,23 +138,45 @@ for vmname in Config.sections():
             #for snapitodel in snaptodel:
                 #print "Snapshot: " + snapitodel.description
 
-            print
-
             if last_to_keep[snap_time_id] > 0:
                 del snaptodel[-last_to_keep[snap_time_id]:]
 
             for snapitodel in snaptodel:
-                print "Deleting old snapshot '" + snapitodel.description + "'"
+                sys.stdout.write( "Deleting old snapshot '" + snapitodel.description + "'" )
+                sys.stdout.flush()
+
                 snapitodel.delete(async=False)
+
+                oldsndelstatus = sndelstatus = ''
                 while vm.snapshots.get(id=snapitodel.get_id()):
                     time.sleep(5)
-                    #print "Delete snapshot in progress (" + snap_status + ") ..."
-                print "Delete snapshot done"
+                    sndelstatus = vm.snapshots.get(id=snapitodel.get_id()).get_snapshot_status()
+
+                    if sndelstatus == oldsndelstatus:
+                        sys.stdout.write('.')
+                    else:
+                        print
+                        sys.stdout.write( "Delete snapshot in progress..." )
+                        oldsndelstatus = sndelstatus
+
+                    sys.stdout.flush()
+
+                    if sndelstatus == 'ok':
+                        break
+
+                print
+                if sndelstatus == 'ok':
+                    print "Delete snapshot ERROR!!!"
+                else:
+                    print "Delete snapshot done."
+
+                print
 
             eltime = time.time() - starttime
             print "Finished backup of VM '%s' at %s. %d seconds." % (vmname,
                                                                      datetime.datetime.now().isoformat(" "),
                                                                      eltime)
+            print
 
     except Exception, e:
         print e
