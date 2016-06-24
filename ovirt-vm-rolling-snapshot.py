@@ -149,7 +149,7 @@ for vmname in Config.sections():
 
                 oldsndelstatus = sndelstatus = ''
                 while vm.snapshots.get(id=snapitodel.get_id()):
-                    time.sleep(5)
+
                     sndelstatus = vm.snapshots.get(id=snapitodel.get_id()).get_snapshot_status()
 
                     if sndelstatus == oldsndelstatus:
@@ -163,6 +163,8 @@ for vmname in Config.sections():
 
                     if sndelstatus == 'ok':
                         break
+                    else:
+                        time.sleep(5)
 
                 print
                 if sndelstatus == 'ok':
