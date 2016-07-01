@@ -150,13 +150,12 @@ for vmname in Config.sections():
                 del snaptodel[-last_to_keep[snap_time_id]:]
 
             for snapitodel in snaptodel:
-                sys.stdout.write( "Deleting old snapshot '" + snapitodel.description + "'" )
-                sys.stdout.flush()
+                print "Deleting old snapshot '" + snapitodel.description + "'"
 
                 snapitodel.delete(async=False)
 
                 oldsndelstatus = sndelstatus = ''
-                while vm.snapshots.get(id=snapitodel.get_id()):
+                while vm.snapshots.get(id=snapitodel.get_id()) is not None:
 
                     sndelstatus = vm.snapshots.get(id=snapitodel.get_id()).get_snapshot_status()
 
