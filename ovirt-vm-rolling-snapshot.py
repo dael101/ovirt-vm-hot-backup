@@ -71,9 +71,10 @@ for vmname in Config.sections():
         deleteonly = ''
         if len(sys.argv) > 1:
             snap_time_id = sys.argv[1]
+            if not last_to_keep[snap_time_id]:
+                last_to_keep[snap_time_id] = 1
             if len(sys.argv) > 2:
                 deleteonly = sys.argv[2]
-
 
         if last_to_keep[snap_time_id]:
 
@@ -127,9 +128,17 @@ for vmname in Config.sections():
                         print
                         break
 
+                for snapi in vm.get_snapshots().list():
+                    snapi_id = snapi.get_id()
+                    if vm.snapshots.get(id=snapi_id).description == snap_description:
+                        snap_status = "ok"
+                        break
+                    else:
+                        snap_status = "error"
+
                 if snap_status != "ok":
-                    print "Snapshot creation failed. Status: " + snap_status
-                    sys.exit(1)
+                    print "Snapshot creation ERROR!!!"
+                    continue
 
                 print "Snapshot done"
                 time.sleep(1)
