@@ -155,9 +155,12 @@ for vmname in Config.sections():
                 snapitodel.delete(async=False)
 
                 oldsndelstatus = sndelstatus = ''
-                while vm.snapshots.get(id=snapitodel.get_id()) is not None:
+                while True:
 
-                    sndelstatus = vm.snapshots.get(id=snapitodel.get_id()).get_snapshot_status()
+                    try:
+                        sndelstatus = vm.snapshots.get(id=snapitodel.get_id()).get_snapshot_status()
+                    except Exception, e:
+                        break
 
                     if sndelstatus == oldsndelstatus:
                         sys.stdout.write('.')
@@ -175,7 +178,6 @@ for vmname in Config.sections():
                     print "Delete snapshot ERROR!!!"
                 else:
                     print "Delete snapshot done."
-
 
             eltime = time.time() - starttime
             print "Finished backup of VM '%s' at %s. %d seconds." % (vmname,
